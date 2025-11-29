@@ -1,3 +1,4 @@
+import 'package:dowa/core/routing/app_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import '../../domain/entities/request.dart';
 import '../../../../core/theme/spacing.dart';
@@ -7,8 +8,9 @@ import '../../../../core/constants/api_constants.dart';
 
 class ImageGallery extends StatelessWidget {
   final List<RequestImage> images;
+  final RequestStatus requestStatus;
 
-  const ImageGallery({super.key, required this.images});
+  const ImageGallery({super.key, required this.images, required this.requestStatus});
 
   @override
   Widget build(BuildContext context) {
@@ -23,13 +25,12 @@ class ImageGallery extends StatelessWidget {
           'Uploaded Images (${images.length})',
           style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600),
         ),
-        const SizedBox(height: AppSpacing.md),
         ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: images.length,
           separatorBuilder: (context, _) =>
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: 8),
           itemBuilder: (context, index) {
             final image = images[index];
             final imageUrl = image.getImageUrl(ApiConstants.baseUrl);
@@ -37,8 +38,17 @@ class ImageGallery extends StatelessWidget {
             final statusColor = _getStatusColor(image.status);
 
             return Clickable(
-              onPressed: () =>
-                  _showImageDialog(context, image, imageUrl, statusLabel),
+              onPressed: () {
+
+                Navigator.of(context).pushNamed(
+                  AppRoutes.requestImageDetail,
+                  arguments: RequestImageDetailArgs(
+                    requestId: image.requestId,
+                    image: image,
+                    requestStatus: requestStatus,
+                  ),
+                );
+              },
               child: Container(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
@@ -162,61 +172,6 @@ class ImageGallery extends StatelessWidget {
           },
         ),
       ],
-    );
-  }
-
-  void _showImageDialog(
-    BuildContext context,
-    RequestImage image,
-    String imageUrl,
-    String statusLabel,
-  ) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        title: Text(
-          image.type == ImageType.normal ? 'Normal Image' : 'Macro Image',
-        ),
-        trailing: IconButton.ghost(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AspectRatio(
-              aspectRatio: 1,
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    _PlaceholderPreview(type: image.type),
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return const Center(child: CircularProgressIndicator());
-                },
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text('Status: $statusLabel'),
-            Text(
-              'Type: ${image.type == ImageType.normal ? "NORMAL" : "MACRO"}',
-            ),
-            Text('Latitude: ${image.latitude.toStringAsFixed(5)}'),
-            Text('Longitude: ${image.longitude.toStringAsFixed(5)}'),
-            if (image.diseaseType != null)
-              Text('Disease: ${image.diseaseType}'),
-            if (image.confidence != null)
-              Text(
-                'Confidence: ${(image.confidence! * 100).toStringAsFixed(1)}%',
-              ),
-            if (image.treatmentPlan != null)
-              Text('Plan: ${image.treatmentPlan}'),
-          ],
-        ),
-      ),
     );
   }
 

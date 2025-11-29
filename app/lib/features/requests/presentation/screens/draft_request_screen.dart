@@ -330,15 +330,7 @@ class _DraftRequestScreenState extends State<DraftRequestScreen> {
               ),
             if (_pendingImages.isNotEmpty) const SizedBox(height: 16),
             if (request.images.isNotEmpty)
-              Card(
-                padding: EdgeInsets.zero,
-                filled: true,
-                borderColor: colorScheme.border,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: ImageGallery(images: request.images),
-                ),
-              ),
+              ImageGallery(images: request.images, requestStatus: request.status),
             if (request.images.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(32.0),
