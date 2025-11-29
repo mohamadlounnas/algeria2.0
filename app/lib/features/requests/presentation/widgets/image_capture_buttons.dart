@@ -30,36 +30,45 @@ class ImageCaptureButtons extends StatelessWidget {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: AppSpacing.md),
-        SizedBox(
-          height: 120,
-          child: PrimaryButton(
-            onPressed: isBusy ? null : onNormalImage,
-            size: ButtonSize.large,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.camera_alt, size: 40),
-                SizedBox(height: AppSpacing.sm),
-                Text('Normal Image', style: TextStyle(fontSize: 16)),
-              ],
+        Row(
+          children: [
+            Expanded(
+              child: SizedBox(
+                height: 100,
+                child: PrimaryButton(
+                  onPressed: isBusy ? null : onNormalImage,
+                  size: ButtonSize.large,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.camera_alt, size: 40),
+                      Text('Normal Image', style: TextStyle(fontSize: 16)),
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        SizedBox(
-          height: 120,
-          child: PrimaryButton(
-            onPressed: isBusy ? null : onMacroImage,
-            size: ButtonSize.large,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.zoom_in, size: 40),
-                SizedBox(height: AppSpacing.sm),
-                Text('Macro Image (10x-100x)', style: TextStyle(fontSize: 16)),
-              ],
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: SizedBox(
+                height: 100,
+                child: PrimaryButton(
+                  onPressed: isBusy ? null : onMacroImage,
+                  size: ButtonSize.large,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.zoom_in, size: 40),
+                      Text(
+                        'Macro Image',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
         const SizedBox(height: AppSpacing.lg),
         Row(

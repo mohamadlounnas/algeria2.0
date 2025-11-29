@@ -16,8 +16,6 @@ class FarmTypeSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Farm Type').h4(),
-        const Gap(8),
         Wrap(
           spacing: 8,
           runSpacing: 8,

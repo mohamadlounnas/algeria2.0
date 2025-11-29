@@ -1,6 +1,7 @@
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import '../screens/farm_settings_screen.dart';
 import '../../../requests/presentation/screens/requests_list_screen.dart';
+import 'farm_map_view.dart';
 
 class FarmScaffold extends StatefulWidget {
   final String farmId;
@@ -25,6 +26,7 @@ class _FarmScaffoldState extends State<FarmScaffold> {
   Widget build(BuildContext context) {
     final pages = [
       RequestsListScreen(farmId: widget.farmId),
+      FarmMapView(farmId: widget.farmId),
       FarmSettingsScreen(farmId: widget.farmId),
     ];
 
@@ -39,6 +41,10 @@ class _FarmScaffoldState extends State<FarmScaffold> {
             NavigationItem(
               label: const Text('Requests'),
               child: const Icon(RadixIcons.listBullet),
+            ),
+            NavigationItem(
+              label: const Text('Map'),
+              child: const Icon(Icons.map),
             ),
             NavigationItem(
               label: const Text('Settings'),

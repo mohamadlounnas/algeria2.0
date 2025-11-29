@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
           child: RequestProviderState(
             child: ShadcnApp(
               title: 'Farm Disease Detection',
-              theme: AppTheme.shadcnTheme,
+              // theme: AppTheme.shadcnTheme,
               navigatorKey: AppRouter.navigatorKey,
               onGenerateRoute: AppRouter.onGenerateRoute,
               initialRoute: AppRoutes.splash,
