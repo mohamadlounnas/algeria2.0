@@ -1,0 +1,68 @@
+# Documentation Manifest
+
+# This file tracks all documentation in the project
+
+documentation:
+  - title: "Main README"
+    path: "../README.md"
+    description: "Project overview, quick start guide, and main documentation"
+    
+  - title: "Architecture Documentation"
+    path: "ARCHITECTURE.md"
+    description: "System architecture, design patterns, and technical overview"
+    
+  - title: "Features Documentation"
+    path: "FEATURES.md"
+    description: "Complete list of all features for farmers and admins"
+    
+  - title: "API Reference"
+    path: "API_REFERENCE.md"
+    description: "Complete API endpoint documentation with examples"
+    
+  - title: "Deployment Guide"
+    path: "DEPLOYMENT.md"
+    description: "Production deployment instructions for backend and frontend"
+    
+  - title: "Authentication Guide"
+    path: "../AUTHENTICATION.md"
+    description: "Authentication flow and implementation details"
+    
+  - title: "Bearer Token Auth"
+    path: "../BEARER_TOKEN_AUTH.md"
+    description: "JWT Bearer token authentication implementation"
+    
+  - title: "Backend README"
+    path: "../server/README.md"
+    description: "Backend setup, API endpoints, and development guide"
+    
+  - title: "Backend Testing"
+    path: "../server/TESTING.md"
+    description: "Backend testing guide and test scripts"
+    
+  - title: "Backend Setup"
+    path: "../server/SETUP.md"
+    description: "Backend setup instructions and troubleshooting"
+    
+  - title: "OpenAPI Documentation"
+    path: "../server/OPENAPI.md"
+    description: "OpenAPI/Swagger documentation setup"
+    
+  - title: "Prismabox Integration"
+    path: "../server/PRISMABOX.md"
+    description: "Prismabox schema validation integration"
+    
+  - title: "Frontend README"
+    path: "../app/README.md"
+    description: "Flutter app setup and development guide"
+    
+  - title: "Frontend API Tests"
+    path: "../app/test/api/README.md"
+    description: "Flutter API unit tests documentation"
+    
+  - title: "Android Emulator Setup"
+    path: "ANDROID_EMULATOR_SETUP.md"
+    description: "Network configuration for Android emulator development"
+
+version: "1.0.0"
+last_updated: "2024"
+
