@@ -31,6 +31,7 @@ class _FarmScaffoldState extends State<FarmScaffold> {
     ];
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       footers: [
         const Divider(height: 1),
         NavigationBar(

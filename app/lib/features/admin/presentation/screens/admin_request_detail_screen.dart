@@ -152,15 +152,18 @@ class _AdminRequestDetailScreenState extends State<AdminRequestDetailScreen> {
   Widget build(BuildContext context) {
     final authProvider = AuthProvider.of(context);
     if (authProvider?.user?.role != UserRole.admin) {
-      return Scaffold(child: const Center(child: Text('Admin access required')));
+      return Scaffold(
+      backgroundColor: Colors.transparent,child: const Center(child: Text('Admin access required')));
     }
 
     if (_isLoading) {
-      return Scaffold(child: const Center(child: CircularProgressIndicator()));
+      return Scaffold(
+      backgroundColor: Colors.transparent,child: const Center(child: CircularProgressIndicator()));
     }
 
     if (_request == null) {
-      return Scaffold(child: const Center(child: Text('Request not found')));
+      return Scaffold(
+      backgroundColor: Colors.transparent,child: const Center(child: Text('Request not found')));
     }
 
     final status = _request!.status;
@@ -173,6 +176,7 @@ class _AdminRequestDetailScreenState extends State<AdminRequestDetailScreen> {
         .length;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       headers: [const AuthenticatedAppBar(title: 'Request Details')],
       child: SingleChildScrollView(
         child: Column(

@@ -18,6 +18,8 @@ class RequestProvider extends InheritedWidget {
   final Future<void> Function(String, UploadImageRequest)? uploadImage;
   final Future<void> Function(String, List<UploadImageRequest>)? bulkUploadImages;
   final Future<Request?> Function(String)? fetchRequest;
+  final Future<void> Function(String imageId, String requestId)? reanalyseImage;
+  final Future<void> Function(String imageId, String requestId)? deleteImage;
 
   const RequestProvider({
     super.key,
@@ -32,6 +34,8 @@ class RequestProvider extends InheritedWidget {
     this.uploadImage,
     this.bulkUploadImages,
     this.fetchRequest,
+    this.reanalyseImage,
+    this.deleteImage,
   });
 
   static RequestProvider? of(BuildContext context) {
@@ -137,11 +141,13 @@ class _RequestProviderStateState extends State<RequestProviderState> {
 
   Future<void> _sendRequest(String requestId) async {
     if (_requestRepository == null) return;
-    
+
     setState(() => _isLoading = true);
     try {
-      final request = await _requestRepository!.sendRequest(requestId);
-      _replaceRequestInState(request);
+      await _requestRepository!.sendRequest(requestId);
+      // Refresh request to pick up images + latest metadata after status change
+      final refreshed = await _requestRepository!.getRequestById(requestId);
+      _replaceRequestInState(refreshed, addIfMissing: true);
     } catch (e) {
       rethrow;
     } finally {
@@ -216,6 +222,37 @@ class _RequestProviderStateState extends State<RequestProviderState> {
     }
   }
 
+  Future<void> _reanalyseImage(String imageId, String requestId) async {
+    if (_requestRepository == null) return;
+    setState(() => _isLoading = true);
+    try {
+      await _requestRepository!.reanalyseImage(imageId);
+      // Refresh parent request to update image status/details
+      final updatedRequest = await _requestRepository!.getRequestById(requestId);
+      _replaceRequestInState(updatedRequest, addIfMissing: true);
+    } catch (e) {
+      debugPrint('Error reanalysing image $imageId: $e');
+      rethrow;
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _deleteImage(String imageId, String requestId) async {
+    if (_requestRepository == null) return;
+    setState(() => _isLoading = true);
+    try {
+      await _requestRepository!.deleteImage(imageId);
+      final updatedRequest = await _requestRepository!.getRequestById(requestId);
+      _replaceRequestInState(updatedRequest, addIfMissing: true);
+    } catch (e) {
+      debugPrint('Error deleting image $imageId: $e');
+      rethrow;
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
   void _replaceRequestInState(Request request, {bool addIfMissing = false}) {
     setState(() {
       final updated = List<Request>.from(_requests);
@@ -242,6 +279,8 @@ class _RequestProviderStateState extends State<RequestProviderState> {
       uploadImage: _uploadImage,
       bulkUploadImages: _bulkUploadImages,
       fetchRequest: _fetchRequest,
+      reanalyseImage: _reanalyseImage,
+      deleteImage: _deleteImage,
       child: widget.child,
     );
   }

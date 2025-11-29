@@ -236,6 +236,7 @@ class _CreateFarmScreenState extends State<CreateFarmScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       headers: [
         AppBar(
           title: const Text('Create New Farm').h3(),

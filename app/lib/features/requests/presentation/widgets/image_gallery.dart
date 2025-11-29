@@ -1,3 +1,4 @@
+import 'package:dowa/core/di/dio_client.dart';
 import 'package:dowa/core/routing/app_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import '../../domain/entities/request.dart';
@@ -33,7 +34,7 @@ class ImageGallery extends StatelessWidget {
               const SizedBox(height: 8),
           itemBuilder: (context, index) {
             final image = images[index];
-            final imageUrl = image.getImageUrl(ApiConstants.baseUrl);
+            final imageUrl = image.getImageUrl(DioClient.getBaseUrl());
             final statusLabel = _getStatusText(image.status);
             final statusColor = _getStatusColor(image.status);
 

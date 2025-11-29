@@ -12,7 +12,12 @@ export default class ImagesController {
    * Serve an uploaded image file
    */
   async show({ params, response }: HttpContext) {
-    const filePath = params['*'] as string
+    const wildcard = params['*'] as string | string[]
+    const filePath = Array.isArray(wildcard) ? wildcard.join('/') : wildcard
+
+    if (typeof filePath !== 'string') {
+      return response.status(400).json({ message: 'Invalid file path' })
+    }
 
     // Security: prevent directory traversal
     if (filePath.includes('..') || filePath.startsWith('/')) {
@@ -22,7 +27,8 @@ export default class ImagesController {
     }
 
     // Construct full path
-    const fullPath = join(app.tmpPath(), filePath)
+    // Route is /uploads/* so the wildcard omits the leading "uploads/"
+    const fullPath = join(app.tmpPath(), 'uploads', filePath)
 
     // Verify file exists
     if (!existsSync(fullPath)) {

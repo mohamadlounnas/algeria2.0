@@ -90,6 +90,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final authProvider = AuthProvider.of(context);
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),

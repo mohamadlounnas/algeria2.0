@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:dowa/features/requests/presentation/widgets/disease_map_view.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
@@ -12,7 +13,9 @@ import '../../data/repositories/request_repository_impl.dart';
 import '../../../../core/di/di_provider.dart';
 import '../widgets/image_capture_buttons.dart';
 import '../widgets/image_gallery.dart';
+import '../widgets/disease_overview.dart';
 import '../../../../shared/services/location_service.dart';
+import 'dart:typed_data';
 
 class DraftRequestScreen extends StatefulWidget {
   final String requestId;
@@ -33,6 +36,11 @@ class _DraftRequestScreenState extends State<DraftRequestScreen> {
   Request? _detailedRequest;
   final List<_PendingImage> _pendingImages = [];
   final ImagePicker _imagePicker = ImagePicker();
+  // Add-from-URL state (shadcn-only UI)
+  bool _showAddUrl = false;
+  final TextEditingController _addUrlController = TextEditingController();
+  ImageType _addUrlType = ImageType.normal;
+  bool _addUrlBusy = false;
 
   @override
   void didChangeDependencies() {
@@ -135,6 +143,88 @@ class _DraftRequestScreenState extends State<DraftRequestScreen> {
     }
   }
 
+  void _openAddFromUrl() {
+    setState(() {
+      _showAddUrl = true;
+      _addUrlBusy = false;
+      // keep previous text if user toggles open/close
+    });
+  }
+
+  void _cancelAddFromUrl() {
+    setState(() {
+      _showAddUrl = false;
+      _addUrlBusy = false;
+    });
+  }
+
+  Future<void> _confirmAddFromUrl() async {
+    if (_requestRepository == null || _dio == null) return;
+    final url = _addUrlController.text.trim();
+    if (url.isEmpty || !url.startsWith('http')) {
+      _showToastMessage('Please enter a valid URL', isError: true);
+      return;
+    }
+    setState(() => _addUrlBusy = true);
+    try {
+      final hasPermission = await LocationService.ensureServiceAndPermission();
+      if (!hasPermission) {
+        _showToastMessage(
+          'Location permission is required to tag your photos.',
+          isError: true,
+        );
+        setState(() => _addUrlBusy = false);
+        return;
+      }
+
+      final response = await _dio!.get<List<int>>(
+        url,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final bytes = response.data;
+      if (bytes == null) {
+        _showToastMessage('Failed to download image.', isError: true);
+        setState(() => _addUrlBusy = false);
+        return;
+      }
+
+      final ext = url.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
+      final file = File(
+        '${Directory.systemTemp.path}/dowa_${DateTime.now().microsecondsSinceEpoch}.$ext',
+      );
+      await file.writeAsBytes(bytes);
+
+      final position = await LocationService.getCurrentLocation();
+      if (position == null) {
+        _showToastMessage(
+          'Unable to get your location. Please try again.',
+          isError: true,
+        );
+        setState(() => _addUrlBusy = false);
+        return;
+      }
+
+      final uploadRequest = UploadImageRequest(
+        filePath: file.path,
+        type: _addUrlType,
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
+
+      setState(() {
+        _pendingImages.add(_PendingImage(request: uploadRequest));
+        _addUrlBusy = false;
+        _showAddUrl = false;
+        _addUrlController.clear();
+        _addUrlType = ImageType.normal;
+      });
+      _showToastMessage('Image ready to send. Tap "Send all" to upload.');
+    } catch (e) {
+      _showToastMessage('Failed to add image from URL: $e', isError: true);
+      setState(() => _addUrlBusy = false);
+    }
+  }
+
   Future<bool> _uploadPendingImage(_PendingImage pending) async {
     final provider = RequestProvider.of(context);
     if (provider?.uploadImage == null) {
@@ -209,8 +299,9 @@ class _DraftRequestScreenState extends State<DraftRequestScreen> {
     try {
       await provider?.sendRequest?.call(widget.requestId);
       if (mounted) {
+        // إعادة تحميل الطلب لتحديث حالته
+        await _loadRequest(showLoader: false);
         _showToastMessage('Request sent successfully.');
-        Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
@@ -246,13 +337,18 @@ class _DraftRequestScreenState extends State<DraftRequestScreen> {
     final shouldBlockUi = _isLoading && !hasAnyRequestData;
 
     if (shouldBlockUi) {
-      return const Scaffold(child: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+      backgroundColor: Colors.transparent,child: Center(child: CircularProgressIndicator()));
     }
 
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDraft = request.status == RequestStatus.draft;
+    final requestLeafs = request.images.expand((image) => image.leafs ?? []).toList();
+    final requestDiseaseEntries = diseaseEntriesFromLeafs(List<LeafData>.from([...requestLeafs])).toList();
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       headers: [
         AppBar(
           leading: [
@@ -263,24 +359,25 @@ class _DraftRequestScreenState extends State<DraftRequestScreen> {
               },
             ),
           ],
-          title: const Text('Draft Request'),
+          title: Text(isDraft ? 'Draft Request' : 'Request Report'),
           trailing: [
             GhostButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
               size: ButtonSize.small,
-              child: const Text('Save draft'),
+              child: Text(isDraft ? 'Save draft' : 'Close'),
             ),
-            PrimaryButton(
-              onPressed: request.images.isNotEmpty
-                  ? () {
-                      _sendRequest();
-                    }
-                  : null,
-              size: ButtonSize.small,
-              child: const Text('Send'),
-            ),
+            if (isDraft)
+              PrimaryButton(
+                onPressed: request.images.isNotEmpty
+                    ? () {
+                        _sendRequest();
+                      }
+                    : null,
+                size: ButtonSize.small,
+                child: const Text('Send'),
+              ),
           ],
           trailingGap: 8,
         ),
@@ -291,27 +388,143 @@ class _DraftRequestScreenState extends State<DraftRequestScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Card(
-              padding: EdgeInsets.zero,
-              filled: true,
-              borderColor: colorScheme.border,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: ImageCaptureButtons(
-                  onNormalImage: () =>
-                      _addImage(ImageType.normal, source: ImageSource.camera),
-                  onMacroImage: () =>
-                      _addImage(ImageType.macro, source: ImageSource.camera),
-                  onNormalFromGallery: () =>
-                      _addImage(ImageType.normal, source: ImageSource.gallery),
-                  onMacroFromGallery: () =>
-                      _addImage(ImageType.macro, source: ImageSource.gallery),
-                  pendingCount: _pendingImages.length,
-                  isBusy: _isBulkUploading,
+            if (!isDraft) ...[
+              // تقرير الأمراض والمواقع والخريطة
+              const SizedBox(height: 16),
+              OutlinedContainer(
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: DiseaseMapView(images: request.images),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
+              if (requestDiseaseEntries.isNotEmpty) ...[
+                DiseaseOverview(entries: requestDiseaseEntries),
+                const SizedBox(height: 16),
+              ],
+              // report of diseases summary
+            ],
+            if (isDraft)
+              Card(
+                padding: EdgeInsets.zero,
+                filled: true,
+                borderColor: colorScheme.border,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: ImageCaptureButtons(
+                    onNormalImage: () =>
+                        _addImage(ImageType.normal, source: ImageSource.camera),
+                    onMacroImage: () =>
+                        _addImage(ImageType.macro, source: ImageSource.camera),
+                    onNormalFromGallery: () => _addImage(
+                      ImageType.normal,
+                      source: ImageSource.gallery,
+                    ),
+                    onMacroFromGallery: () =>
+                        _addImage(ImageType.macro, source: ImageSource.gallery),
+                    onAddFromUrl: _openAddFromUrl,
+                    pendingCount: _pendingImages.length,
+                    isBusy: _isBulkUploading,
+                  ),
+                ),
+              ),
+            if (_showAddUrl) ...[
+              const SizedBox(height: 12),
+              Card(
+                padding: const EdgeInsets.all(16),
+                filled: true,
+                borderColor: colorScheme.border,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Add image from URL',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _addUrlController,
+                      keyboardType: TextInputType.url,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _addUrlType == ImageType.normal
+                              ? PrimaryButton(
+                                  onPressed: _addUrlBusy
+                                      ? null
+                                      : () => setState(
+                                          () => _addUrlType = ImageType.normal,
+                                        ),
+                                  size: ButtonSize.small,
+                                  child: const Text('Normal'),
+                                )
+                              : OutlineButton(
+                                  onPressed: _addUrlBusy
+                                      ? null
+                                      : () => setState(
+                                          () => _addUrlType = ImageType.normal,
+                                        ),
+                                  size: ButtonSize.small,
+                                  child: const Text('Normal'),
+                                ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _addUrlType == ImageType.macro
+                              ? PrimaryButton(
+                                  onPressed: _addUrlBusy
+                                      ? null
+                                      : () => setState(
+                                          () => _addUrlType = ImageType.macro,
+                                        ),
+                                  size: ButtonSize.small,
+                                  child: const Text('Macro'),
+                                )
+                              : OutlineButton(
+                                  onPressed: _addUrlBusy
+                                      ? null
+                                      : () => setState(
+                                          () => _addUrlType = ImageType.macro,
+                                        ),
+                                  size: ButtonSize.small,
+                                  child: const Text('Macro'),
+                                ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Spacer(),
+                        GhostButton(
+                          onPressed: _addUrlBusy ? null : _cancelAddFromUrl,
+                          size: ButtonSize.small,
+                          child: const Text('Cancel'),
+                        ),
+                        const SizedBox(width: 8),
+                        PrimaryButton(
+                          onPressed: _addUrlBusy ? null : _confirmAddFromUrl,
+                          size: ButtonSize.small,
+                          leading: _addUrlBusy
+                              ? const SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(LucideIcons.link),
+                          child: Text(_addUrlBusy ? 'Adding...' : 'Add'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             if (_pendingImages.isNotEmpty)
               Card(
                 padding: EdgeInsets.zero,
@@ -329,9 +542,13 @@ class _DraftRequestScreenState extends State<DraftRequestScreen> {
                 ),
               ),
             if (_pendingImages.isNotEmpty) const SizedBox(height: 16),
+            const SizedBox(height: 16),
             if (request.images.isNotEmpty)
-              ImageGallery(images: request.images, requestStatus: request.status),
-            if (request.images.isEmpty)
+              ImageGallery(
+                images: request.images,
+                requestStatus: request.status,
+              )
+            else
               const Padding(
                 padding: EdgeInsets.all(32.0),
                 child: Center(

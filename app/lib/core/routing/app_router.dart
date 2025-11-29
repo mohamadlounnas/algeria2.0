@@ -164,6 +164,7 @@ class AppRouter {
     return MaterialPageRoute(
       settings: settings,
       builder: (_) => Scaffold(
+      backgroundColor: Colors.transparent,
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -224,6 +225,7 @@ class _AuthGateScreenState extends State<AuthGateScreen> {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
+      backgroundColor: Colors.transparent,
       body: Center(child: CircularProgressIndicator()),
     );
   }

@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:dowa/core/di/dio_client.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import '../../domain/entities/request.dart';
 import '../providers/request_provider.dart';
@@ -15,6 +18,7 @@ class RequestsListScreen extends StatefulWidget {
 
 class _RequestsListScreenState extends State<RequestsListScreen> {
   bool _hasLoaded = false;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
@@ -24,7 +28,18 @@ class _RequestsListScreenState extends State<RequestsListScreen> {
       final provider = RequestProvider.of(context);
       provider?.loadRequests?.call(widget.farmId);
       _hasLoaded = true;
+      // Start periodic refresh every 5 seconds
+      _refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+        final p = RequestProvider.of(context);
+        p?.loadRequests?.call(widget.farmId);
+      });
     });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -34,6 +49,7 @@ class _RequestsListScreenState extends State<RequestsListScreen> {
     final requests = provider?.requests ?? const <Request>[];
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       headers: [
         AppBar(
           title: const Text('Requests').h3(),
@@ -368,7 +384,7 @@ class _RequestImageStrip extends StatelessWidget {
         itemBuilder: (context, index) {
           final image = request.images[index];
           final statusColor = _imageStatusColor(image.status);
-          final imageUrl = image.getImageUrl(ApiConstants.baseUrl);
+          final imageUrl = image.getImageUrl(DioClient.getBaseUrl());
 
           return GestureDetector(
             onTap: () {
@@ -498,4 +514,14 @@ class _InfoBadge extends StatelessWidget {
       ],
     );
   }
+}
+
+
+// fixImageServer
+String fixImageServer(String url) {
+  // https://example.com:3333/path/to/image.jpg
+  var tokens = url.split("3333");
+  // replace the http://example.com:3333 with base url from dio
+  // so it becomes baseurl+/path/to/image.jpg
+  return DioClient.getBaseUrl() + tokens[1];
 }

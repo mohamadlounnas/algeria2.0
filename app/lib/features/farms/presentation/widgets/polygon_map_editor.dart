@@ -7,11 +7,21 @@ import 'package:flutter/material.dart' as material;
 class PolygonMapEditor extends StatefulWidget {
   final Function(List<Map<String, double>>) onPolygonUpdated;
   final List<LatLng>? initialPoints;
+  final List<LatLng>? highlightMarkers;
+  final Color highlightMarkerColor;
+  final double highlightMarkerSize;
+  final Color highlightMarkerBorderColor;
+  final double highlightMarkerBorderWidth;
 
   const PolygonMapEditor({
     super.key,
     required this.onPolygonUpdated,
     this.initialPoints,
+    this.highlightMarkers,
+    this.highlightMarkerColor = Colors.blue,
+    this.highlightMarkerSize = 12,
+    this.highlightMarkerBorderColor = Colors.white,
+    this.highlightMarkerBorderWidth = 1.5,
   });
 
   @override
@@ -23,6 +33,35 @@ class _PolygonMapEditorState extends State<PolygonMapEditor> {
   List<LatLng> _points = [];
   LatLng? _previewPoint;
   bool _editingComplete = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _points = widget.initialPoints != null
+        ? widget.initialPoints!.map((point) => LatLng(point.latitude, point.longitude)).toList()
+        : [];
+    material.WidgetsBinding.instance.addPostFrameCallback((_) => _fitToPoints());
+  }
+
+  @override
+  void didUpdateWidget(covariant PolygonMapEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_latLngListsEqual(widget.initialPoints, oldWidget.initialPoints)) {
+      setState(() {
+        _points = widget.initialPoints != null
+            ? widget.initialPoints!
+                .map((point) => LatLng(point.latitude, point.longitude))
+                .toList()
+            : [];
+        _editingComplete = false;
+      });
+      _fitToPoints();
+      _updatePolygon();
+    }
+    if (!_latLngListsEqual(widget.highlightMarkers, oldWidget.highlightMarkers)) {
+      _fitToPoints();
+    }
+  }
 
   void _onTap(LatLng point) {
     setState(() {
@@ -86,6 +125,26 @@ class _PolygonMapEditorState extends State<PolygonMapEditor> {
                           color: theme.colorScheme.destructive,
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: isNarrow ? 1.5 : 2),
+                        ),
+                      ),
+                    ))
+                .toList(),
+          ),
+        if (widget.highlightMarkers != null && widget.highlightMarkers!.isNotEmpty)
+          MarkerLayer(
+            markers: widget.highlightMarkers!
+                .map((point) => Marker(
+                      point: point,
+                      width: widget.highlightMarkerSize,
+                      height: widget.highlightMarkerSize,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: widget.highlightMarkerColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: widget.highlightMarkerBorderColor,
+                            width: widget.highlightMarkerBorderWidth,
+                          ),
                         ),
                       ),
                     ))
@@ -263,5 +322,32 @@ class _PolygonMapEditorState extends State<PolygonMapEditor> {
     final h = sinDlat * sinDlat + math.cos(lat1) * math.cos(lat2) * sinDlon * sinDlon;
     final c = 2 * math.atan2(math.sqrt(h), math.sqrt(1 - h));
     return R * c;
+  }
+
+  void _fitToPoints() {
+    final visiblePoints = <LatLng>[];
+    visiblePoints.addAll(_points);
+    if (widget.highlightMarkers != null) {
+      visiblePoints.addAll(widget.highlightMarkers!);
+    }
+    if (visiblePoints.isEmpty) return;
+
+    final bounds = LatLngBounds.fromPoints(visiblePoints);
+    _mapController.fitBounds(
+      bounds,
+      options: FitBoundsOptions(padding: material.EdgeInsets.all(32)),
+    );
+  }
+
+  bool _latLngListsEqual(List<LatLng>? a, List<LatLng>? b) {
+    if (identical(a, b)) return true;
+    if (a == null || b == null) return false;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i].latitude != b[i].latitude || a[i].longitude != b[i].longitude) {
+        return false;
+      }
+    }
+    return true;
   }
 }

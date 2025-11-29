@@ -190,6 +190,7 @@ class _AppShellState extends State<AppShell> {
     // Mobile layout: Standard scaffold with drawer
     if (responsive.isMobile) {
       return Scaffold(
+      backgroundColor: Colors.transparent,
         appBar: widget.title != null
             ? AuthenticatedAppBar(
                 title: widget.title!,
@@ -212,6 +213,7 @@ class _AppShellState extends State<AppShell> {
 
     // Tablet/Desktop layout: Navigation rail + content
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: widget.title != null
           ? AuthenticatedAppBar(
               title: widget.title!,

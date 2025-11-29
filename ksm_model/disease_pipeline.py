@@ -546,6 +546,8 @@ class GrapeLeafPipeline:
             results.append({
                 'leaf_index': i,
                 'leaf_image': leaf_data['image'],
+                'bbox': leaf_data.get('bbox', None),
+                'center': leaf_data.get('center', None),
                 'anomaly_result': anomaly_result,
                 'disease_result': disease_result
             })

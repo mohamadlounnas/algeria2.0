@@ -31,6 +31,77 @@ except ImportError as e:
     print("   Make sure disease_pipeline.py is in the same directory")
     sys.exit(1)
 
+# Import disease characteristics database
+try:
+    from disease_characteristics import (
+        DISEASE_CHARACTERISTICS,
+        get_disease_info,
+        get_disease_description,
+        get_disease_treatment,
+        get_disease_severity
+    )
+    print("✅ Disease characteristics database loaded")
+except ImportError as e:
+    print(f"⚠️ Disease characteristics not available: {e}")
+    DISEASE_CHARACTERISTICS = {}
+    get_disease_info = lambda x: None
+    get_disease_description = lambda x: "Unknown disease"
+    get_disease_treatment = lambda x: "Consult with agricultural specialist"
+    get_disease_severity = lambda x: "unknown"
+
+
+def normalize_disease_name(name):
+    """
+    Normalize disease name to match database format
+    Handles case variations and common naming patterns
+    """
+    if not name:
+        return 'Unknown Disease'
+    
+    # Disease name mapping (lowercase -> proper case)
+    disease_mapping = {
+        'black rot': 'Black Rot',
+        'blackrot': 'Black Rot',
+        'esca': 'Esca (Black Measles)',
+        'esca (black measles)': 'Esca (Black Measles)',
+        'black measles': 'Esca (Black Measles)',
+        'leaf blight': 'Leaf Blight (Isariopsis Leaf Spot)',
+        'grapeleaf blight': 'Leaf Blight (Isariopsis Leaf Spot)',
+        'grape leaf blight': 'Leaf Blight (Isariopsis Leaf Spot)',
+        'isariopsis leaf spot': 'Leaf Blight (Isariopsis Leaf Spot)',
+        'anthracnose': 'Anthracnose',
+        'septoria leaf spot': 'Septoria Leaf Spot',
+        'septoria': 'Septoria Leaf Spot',
+        'bacterial leaf spot': 'Bacterial Leaf Spot',
+        'bacterial spot': 'Bacterial Spot',
+        'rust': 'Rust',
+        'downy mildew': 'Downy Mildew',
+        'downymildew': 'Downy Mildew',
+        'powdery mildew': 'Powdery Mildew',
+        'powderymildew': 'Powdery Mildew',
+        'healthy': 'Healthy Tissue',
+        'healthy tissue': 'Healthy Tissue'
+    }
+    
+    # Convert to lowercase for matching
+    name_lower = name.lower().strip()
+    
+    # Check if exact match in mapping
+    if name_lower in disease_mapping:
+        return disease_mapping[name_lower]
+    
+    # Check if it's already in the database (proper case)
+    if name in DISEASE_CHARACTERISTICS:
+        return name
+    
+    # Try title case
+    name_title = name.title()
+    if name_title in DISEASE_CHARACTERISTICS:
+        return name_title
+    
+    # Return original if no match found
+    return name
+
 class DiseaseDetectionAPI:
     """API server for grape leaf disease detection"""
     
@@ -384,16 +455,50 @@ Cache-Control: public, max-age=3600\r
                     # Add specific disease information if available
                     if disease_result and 'disease_info' in disease_result:
                         for disease_info in disease_result['disease_info']:
-                            disease_name = disease_info.get('name', 'unknown_disease')
+                            disease_name_raw = disease_info.get('name', 'unknown_disease')
                             confidence = disease_info.get('confidence', 0.0)
-                            diseases[disease_name] = float(confidence)
+                            percentage = disease_info.get('percentage', 0.0)
+                            
+                            # Normalize disease name to match database (proper case)
+                            disease_name = normalize_disease_name(disease_name_raw)
+                            
+                            # Get detailed disease information from database
+                            disease_details = get_disease_info(disease_name)
+                            
+                            if disease_details:
+                                # Disease found in database
+                                diseases[disease_name] = {
+                                    'confidence': float(confidence),
+                                    'percentage': float(percentage),
+                                    'description': disease_details.get('description', 'Unknown disease'),
+                                    'severity': disease_details.get('severity', 'unknown'),
+                                    'treatment': disease_details.get('treatment', 'Consult with agricultural specialist')
+                                }
+                            else:
+                                # Disease not in database, use generic info
+                                diseases[disease_name] = {
+                                    'confidence': float(confidence),
+                                    'percentage': float(percentage),
+                                    'description': f'{disease_name} detected',
+                                    'severity': 'unknown',
+                                    'treatment': 'Consult with agricultural specialist for proper treatment'
+                                }
                     else:
-                        # Generic diseased classification
-                        anomaly_confidence = anomaly_result.get('confidence', 80.0) / 100.0
-                        diseases['diseased'] = float(anomaly_confidence)
+                        # No specific disease detected, but anomaly score indicates disease
+                        # Only add if confidence is reasonable
+                        anomaly_confidence = anomaly_result.get('confidence', 0.0) / 100.0
+                        if anomaly_confidence > 0.4:  # Only if >40% confidence
+                            diseases['Unknown Disease'] = {
+                                'confidence': float(anomaly_confidence),
+                                'percentage': 0.0,
+                                'description': 'Anomaly detected but specific disease type unidentified',
+                                'severity': 'unknown',
+                                'treatment': 'Further analysis recommended. Consult with agricultural specialist.'
+                            }
                 else:
+                    # Healthy leaf - keep diseases empty
                     total_healthy += 1
-                    diseases['healthy'] = float(anomaly_result.get('confidence', 95.0) / 100.0)
+                    # Don't add anything to diseases dict for healthy leaves
                 
                 # Save leaf image to static directory
                 with self.counter_lock:
@@ -425,10 +530,23 @@ Cache-Control: public, max-age=3600\r
                     cv2.imwrite(overlay_path, overlay)
                     overlay_url = f"{base_url}/static/{overlay_filename}"
                 
+                # Get bounding box coordinates
+                bbox = leaf_result.get('bbox', None)
+                bbox_data = None
+                if bbox:
+                    x1, y1, x2, y2 = bbox
+                    bbox_data = {
+                        'x1': int(x1),
+                        'y1': int(y1),
+                        'x2': int(x2),
+                        'y2': int(y2)
+                    }
+                
                 leafs.append({
                     "image": leaf_url,
                     "heatmap": heatmap_url,
                     "overlay": overlay_url,
+                    "bbox": bbox_data,
                     "diseases": diseases,
                     "anomaly_score": float(anomaly_result.get('anomaly_score', 0.0)),
                     "is_diseased": bool(is_diseased)

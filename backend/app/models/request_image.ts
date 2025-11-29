@@ -40,6 +40,33 @@ export default class RequestImage extends BaseModel {
   @column()
   declare services: string | null
 
+  // AI processing outputs
+  @column()
+  declare imageUrl: string | null
+
+  @column()
+  declare heatmapUrl: string | null
+
+  @column()
+  declare overlayUrl: string | null
+
+  @column()
+  declare anomalyScore: number | null
+
+  @column()
+  declare isDiseased: boolean | null
+
+  @column()
+  declare diseasesJson: string | null
+
+  // Complete leafs array from AI response
+  @column()
+  declare leafsData: string | null
+
+  // Summary data from AI response (total_leafs, diseased_leafs, healthy_leafs)
+  @column()
+  declare summaryJson: string | null
+
   @belongsTo(() => Request)
   declare request: BelongsTo<typeof Request>
 

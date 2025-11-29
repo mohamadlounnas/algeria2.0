@@ -32,6 +32,7 @@ class ResponsiveScaffold extends StatelessWidget {
     // Mobile: Standard scaffold with drawer
     if (responsive.isMobile) {
       return Scaffold(
+      backgroundColor: Colors.transparent,
         appBar: appBar ??
             AuthenticatedAppBar(
               title: title,
@@ -54,6 +55,7 @@ class ResponsiveScaffold extends StatelessWidget {
 
     // Tablet/Desktop: Centered content with side navigation
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: appBar ??
           AuthenticatedAppBar(
             title: title,

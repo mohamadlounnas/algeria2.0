@@ -11,18 +11,14 @@ class DiseaseMapView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final diseasedImages = images.where((img) => img.diseaseType != null).toList();
-    
-    if (diseasedImages.isEmpty) {
-      return const Center(child: Text('No diseases detected'));
-    }
+    // إذا لم توجد صور، ضع نقاط عشوائية داخل حدود الجزائر مؤقتاً
+    final List<LatLng> randomPoints = images.isEmpty
+        ? List.generate(5, (i) => LatLng(36.7 + i * 0.01, 3.1 + i * 0.01))
+        : images.map((img) => LatLng(img.latitude, img.longitude)).toList();
 
     return FlutterMap(
       options: MapOptions(
-        initialCenter: LatLng(
-          diseasedImages.first.latitude,
-          diseasedImages.first.longitude,
-        ),
+        initialCenter: randomPoints.isNotEmpty ? randomPoints.first : LatLng(36.7, 3.1),
         initialZoom: 15.0,
       ),
       children: [
@@ -31,16 +27,16 @@ class DiseaseMapView extends StatelessWidget {
           userAgentPackageName: 'com.example.dowa',
         ),
         MarkerLayer(
-          markers: diseasedImages.map((image) {
+          markers: randomPoints.map((point) {
             return Marker(
-              point: LatLng(image.latitude, image.longitude),
+              point: point,
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: AppColors.error,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.warning, color: Colors.white, size: 20),
+                child: const Icon(Icons.location_on, color: Colors.white, size: 20),
               ),
             );
           }).toList(),

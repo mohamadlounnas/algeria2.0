@@ -93,11 +93,13 @@ class _RequestResultsScreenState extends State<RequestResultsScreen> {
     }
 
     if (_isLoading) {
-      return const Scaffold(child: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+      backgroundColor: Colors.transparent,child: Center(child: CircularProgressIndicator()));
     }
 
     if (request == null) {
       return Scaffold(
+      backgroundColor: Colors.transparent,
         headers: [
           AppBar(
             title: const Text('Request Results'),
@@ -125,6 +127,7 @@ class _RequestResultsScreenState extends State<RequestResultsScreen> {
     return m.DefaultTabController(
       length: 3,
       child: Scaffold(
+      backgroundColor: Colors.transparent,
         headers: [
           AppBar(
             title: const Text('Request Results'),

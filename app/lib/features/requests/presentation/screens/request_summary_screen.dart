@@ -145,11 +145,13 @@ class _RequestSummaryScreenState extends State<RequestSummaryScreen> {
     }
 
     if ((_isRequestLoading || _isLoading) && request == null) {
-      return Scaffold(child: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+      backgroundColor: Colors.transparent,child: Center(child: CircularProgressIndicator()));
     }
 
     if (request == null) {
-      return Scaffold(child: Center(child: Text('Request not found')));
+      return Scaffold(
+      backgroundColor: Colors.transparent,child: Center(child: Text('Request not found')));
     }
 
     final totalImages = request.images.length;
@@ -164,6 +166,7 @@ class _RequestSummaryScreenState extends State<RequestSummaryScreen> {
         .length;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       headers: const [AuthenticatedAppBar(title: 'Request Summary')],
       child: Stack(
         children: [

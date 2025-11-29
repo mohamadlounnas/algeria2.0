@@ -80,11 +80,13 @@ class _AdminRequestsListScreenState extends State<AdminRequestsListScreen> {
     final authProvider = AuthProvider.of(context);
     if (authProvider?.user?.role != UserRole.admin) {
       return Scaffold(
+      backgroundColor: Colors.transparent,
         child: const Center(child: Text('Admin access required')),
       );
     }
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       headers: [
         const AuthenticatedAppBar(title: 'All Requests'),
       ],

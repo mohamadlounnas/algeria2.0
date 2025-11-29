@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../../domain/entities/request.dart';
 
 class RequestModel extends Request {
@@ -79,11 +81,49 @@ class RequestImageModel extends RequestImage {
     super.treatmentPlan,
     super.materials,
     super.services,
+    super.imageUrl,
+    super.heatmapUrl,
+    super.overlayUrl,
+    super.anomalyScore,
+    super.isDiseased,
+    super.diseasesJson,
+    super.leafs,
+    super.summary,
     super.processedAt,
     required super.createdAt,
   });
 
   factory RequestImageModel.fromJson(Map<String, dynamic> json) {
+    // Parse leafs array
+    List<LeafData>? leafs;
+    final leafsDataStr = json['leafsData'] as String?;
+    if (leafsDataStr != null && leafsDataStr.isNotEmpty) {
+      try {
+        final leafsJson = jsonDecode(leafsDataStr);
+        if (leafsJson is List) {
+          leafs = leafsJson
+              .map((e) => LeafData.fromJson(e as Map<String, dynamic>))
+              .toList();
+        }
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+
+    // Parse summary
+    SummaryData? summary;
+    final summaryJsonStr = json['summaryJson'] as String?;
+    if (summaryJsonStr != null && summaryJsonStr.isNotEmpty) {
+      try {
+        final summaryJson = jsonDecode(summaryJsonStr);
+        if (summaryJson is Map<String, dynamic>) {
+          summary = SummaryData.fromJson(summaryJson);
+        }
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+
     return RequestImageModel(
       id: json['id'] as String,
       requestId: json['requestId'] as String,
@@ -99,6 +139,16 @@ class RequestImageModel extends RequestImage {
       treatmentPlan: json['treatmentPlan'] as String?,
       materials: json['materials'] as String?,
       services: json['services'] as String?,
+      imageUrl: json['imageUrl'] as String?,
+      heatmapUrl: json['heatmapUrl'] as String?,
+      overlayUrl: json['overlayUrl'] as String?,
+      anomalyScore: json['anomalyScore'] != null
+          ? (json['anomalyScore'] as num).toDouble()
+          : null,
+      isDiseased: [1, "1", "true", true].contains(json['isDiseased']),
+      diseasesJson: json['diseasesJson'] as String?,
+      leafs: leafs,
+      summary: summary,
       processedAt: json['processedAt'] != null
           ? DateTime.parse(json['processedAt'] as String)
           : null,

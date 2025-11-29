@@ -18,16 +18,20 @@ class RequestRepositoryImpl implements RequestRepository {
     try {
       final queryParams = farmId != null ? '?farmId=$farmId' : '';
       final response = await dio.get('${ApiConstants.requests}$queryParams');
-      final data = response.data;
-      final requestsList = data is List ? data : (data['data'] ?? []);
-      return (requestsList as List)
-          .map((r) => RequestModel.fromJson(r as Map<String, dynamic>))
+      final data = List<Map<String, dynamic>>.from([
+        ...response.data
+      ]);
+      print(data);
+      var items = data.map((r) => RequestModel.fromJson(r as Map<String, dynamic>))
           .toList();
+      return items;
     } on DioException catch (e) {
       if (e.response != null) {
         throw Exception(e.response?.data['message'] ?? 'Failed to get requests');
       }
       throw Exception('Network error: ${e.message}');
+    } catch (e) {
+      throw Exception('Unexpected error: $e');
     }
   }
 
@@ -35,7 +39,10 @@ class RequestRepositoryImpl implements RequestRepository {
   Future<Request> getRequestById(String id) async {
     try {
       final response = await dio.get('${ApiConstants.requests}/$id');
-      return RequestModel.fromJson(response.data as Map<String, dynamic>);
+      final data = Map<String, dynamic>.from({
+        ...response.data
+      });
+      return RequestModel.fromJson(data);
     } on DioException catch (e) {
       if (e.response != null) {
         throw Exception(e.response?.data['message'] ?? 'Request not found');
@@ -184,6 +191,31 @@ class RequestRepositoryImpl implements RequestRepository {
     } on DioException catch (e) {
       if (e.response != null) {
         throw Exception(e.response?.data['message'] ?? 'Failed to get report');
+      }
+      throw Exception('Network error: ${e.message}');
+    }
+  }
+
+  @override
+  Future<RequestImage> reanalyseImage(String imageId) async {
+    try {
+      final response = await dio.post('${ApiConstants.apiPrefix}/request-images/$imageId/reanalyze');
+      return RequestImageModel.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      if (e.response != null) {
+        throw Exception(e.response?.data['message'] ?? 'Failed to reanalyse image');
+      }
+      throw Exception('Network error: ${e.message}');
+    }
+  }
+
+  @override
+  Future<void> deleteImage(String imageId) async {
+    try {
+      await dio.delete('${ApiConstants.apiPrefix}/request-images/$imageId');
+    } on DioException catch (e) {
+      if (e.response != null) {
+        throw Exception(e.response?.data['message'] ?? 'Failed to delete image');
       }
       throw Exception('Network error: ${e.message}');
     }

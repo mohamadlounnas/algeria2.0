@@ -109,12 +109,14 @@ class _ReportEditorScreenState extends State<ReportEditorScreen> {
     final authProvider = AuthProvider.of(context);
     if (authProvider?.user?.role != UserRole.admin) {
       return const Scaffold(
+      backgroundColor: Colors.transparent,
         headers: [AuthenticatedAppBar(title: 'Edit Report')],
         child: Center(child: Text('Admin access required')),
       );
     }
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       headers: const [AuthenticatedAppBar(title: 'Edit Report')],
           child: _isLoading && _reportController.text.isEmpty
             ? Center(child: CircularProgressIndicator())

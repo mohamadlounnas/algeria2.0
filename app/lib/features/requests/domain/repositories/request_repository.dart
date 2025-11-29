@@ -15,5 +15,7 @@ abstract class RequestRepository {
     List<UploadImageRequest> images,
   );
   Future<String?> getReport(String id);
+  Future<RequestImage> reanalyseImage(String imageId);
+  Future<void> deleteImage(String imageId);
 }
 

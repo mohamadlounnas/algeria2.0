@@ -45,6 +45,10 @@ router
     router.post('/api/requests/:id/images/bulk', [RequestsController, 'bulkUploadImages'])
     router.post('/api/requests/:id/send', [RequestsController, 'send'])
     router.get('/api/requests/:id/report', [RequestsController, 'getReport'])
+    // Re-analyze a single request image
+    router.post('/api/request-images/:id/reanalyze', [RequestsController, 'reanalyzeImage'])
+    // Delete a single request image
+    router.delete('/api/request-images/:id', [RequestsController, 'deleteImage'])
   })
   .use(middleware.auth())
 

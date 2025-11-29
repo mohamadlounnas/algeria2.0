@@ -51,6 +51,7 @@ class _FarmsListScreenState extends State<FarmsListScreen> {
     final user = authProvider?.user;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       headers: [
         AppBar(
           title: Text('Welcome, ${user?.name ?? 'User'}').h3(),

@@ -4,6 +4,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
 
 class DioClient {
+  static String _baseUrlKey = 'api_base_url';
+  static getBaseUrl() => _baseUrlKey;
+
   late final Dio _dio;
   String? _token;
 
@@ -89,4 +92,27 @@ class DioClient {
   String? get token => _token;
 
   Dio get dio => _dio;
+
+  String get baseUrl => _dio.options.baseUrl ?? ApiConstants.baseUrl;
+
+  Future<void> loadBaseUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedBaseUrl = prefs.getString(_baseUrlKey);
+    if (savedBaseUrl != null && savedBaseUrl.isNotEmpty) {
+      _dio.options.baseUrl = savedBaseUrl;
+      _baseUrlKey = savedBaseUrl;
+      if (kDebugMode) {
+        debugPrint('ℹ️ Loaded saved API base URL: $savedBaseUrl');
+      }
+    }
+  }
+
+  Future<void> setBaseUrl(String baseUrl) async {
+    _dio.options.baseUrl = baseUrl;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_baseUrlKey, baseUrl);
+    if (kDebugMode) {
+      debugPrint('✅ Base URL updated: $baseUrl');
+    }
+  }
 }

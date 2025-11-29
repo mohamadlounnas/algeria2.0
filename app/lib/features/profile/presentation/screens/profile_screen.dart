@@ -22,11 +22,13 @@ class ProfileScreen extends StatelessWidget {
 
     if (user == null) {
       return Scaffold(
+      backgroundColor: Colors.transparent,
         child: const Center(child: Text('No profile information available')),
       );
     }
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       headers: [
         AppBar(
           title: const Text('Profile').h3(),

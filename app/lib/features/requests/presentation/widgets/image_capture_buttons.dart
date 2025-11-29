@@ -7,6 +7,7 @@ class ImageCaptureButtons extends StatelessWidget {
   final VoidCallback onMacroImage;
   final VoidCallback onNormalFromGallery;
   final VoidCallback onMacroFromGallery;
+  final VoidCallback? onAddFromUrl;
   final bool isBusy;
   final int pendingCount;
 
@@ -16,6 +17,7 @@ class ImageCaptureButtons extends StatelessWidget {
     required this.onMacroImage,
     required this.onNormalFromGallery,
     required this.onMacroFromGallery,
+    this.onAddFromUrl,
     this.isBusy = false,
     this.pendingCount = 0,
   });
@@ -25,9 +27,24 @@ class ImageCaptureButtons extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
-          'Capture Images',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'Capture Images',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            if (onAddFromUrl != null)
+              Tooltip(
+                tooltip: (context) => const TooltipContainer(child: Text('Add from URL')),
+                child: IconButton.ghost(
+                  density: ButtonDensity.icon,
+                  onPressed: isBusy ? null : onAddFromUrl,
+                  icon: const Icon(Icons.link),
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: AppSpacing.md),
         Row(
