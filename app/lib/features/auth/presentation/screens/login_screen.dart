@@ -137,78 +137,98 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final authProvider = AuthProvider.of(context);
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      child: Container(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: SizedBox(
-              width: 400,
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-
-                    const Gap(8),
-                    const Text('Sign in to your account').muted().textCenter(),
-                    const Gap(32),
-                    if (_errorMessage != null) ...[
-                      Alert(
-                        destructive: true,
-                        leading: const Icon(RadixIcons.exclamationTriangle),
-                        title: const Text('Error'),
-                        content: Text(_errorMessage!),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        // https://i.pinimg.com/736x/82/18/7c/82187cd1e8ea3a9070a546406e7729c4.jpg
+        image: DecorationImage(
+          image: const NetworkImage("https://i.pinimg.com/736x/82/18/7c/82187cd1e8ea3a9070a546406e7729c4.jpg"),
+          fit: BoxFit.cover,
+          colorFilter: ColorFilter.mode(
+            Colors.black.withOpacity(0.6),
+            BlendMode.darken,
+          ),
+        ),
+        // color: Colors.white
+      ),
+      child: Theme(
+        data: ThemeData.dark(),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          child: Center(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: SizedBox(
+                    width: 400,
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                    
+                          const Gap(8),
+                          const Text('Sign in to your account').muted().textCenter(),
+                          const Gap(32),
+                          if (_errorMessage != null) ...[
+                            Alert(
+                              destructive: true,
+                              leading: const Icon(RadixIcons.exclamationTriangle),
+                              title: const Text('Error'),
+                              content: Text(_errorMessage!),
+                            ),
+                            const Gap(24),
+                          ],
+                          TextField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            placeholder: const Text('Email'),
+                          ),
+                          const Gap(16),
+                          TextField(
+                            controller: _passwordController,
+                            obscureText: true,
+                            placeholder: const Text('Password'),
+                          ),
+                          const Gap(24),
+                          PrimaryButton(
+                            onPressed: _isLoading || authProvider?.isLoading == true
+                                ? null
+                                : _handleLogin,
+                            child: _isLoading || authProvider?.isLoading == true
+                                ? Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(size: 20),
+                                      ),
+                                      const Gap(8),
+                                      const Text('Signing in...'),
+                                    ],
+                                  )
+                                : const Text('Sign In'),
+                          ),
+                          const Gap(16),
+                          TextButton(
+                            onPressed: _handleSetServerUrl,
+                            child: const Text('Set server URL'),
+                          ),
+                          const Gap(8),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pushNamed(AppRoutes.register);
+                            },
+                            child: const Text("Don't have an account? Sign up"),
+                          ),
+                        ],
                       ),
-                      const Gap(24),
-                    ],
-                    TextField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      placeholder: const Text('Email'),
                     ),
-                    const Gap(16),
-                    TextField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      placeholder: const Text('Password'),
-                    ),
-                    const Gap(24),
-                    PrimaryButton(
-                      onPressed: _isLoading || authProvider?.isLoading == true
-                          ? null
-                          : _handleLogin,
-                      child: _isLoading || authProvider?.isLoading == true
-                          ? Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(size: 20),
-                                ),
-                                const Gap(8),
-                                const Text('Signing in...'),
-                              ],
-                            )
-                          : const Text('Sign In'),
-                    ),
-                    const Gap(16),
-                    TextButton(
-                      onPressed: _handleSetServerUrl,
-                      child: const Text('Set server URL'),
-                    ),
-                    const Gap(8),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pushNamed(AppRoutes.register);
-                      },
-                      child: const Text("Don't have an account? Sign up"),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),

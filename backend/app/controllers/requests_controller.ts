@@ -14,6 +14,7 @@ import { randomBytes } from 'node:crypto'
 import { join } from 'node:path'
 import { existsSync, mkdirSync, copyFileSync, unlinkSync } from 'node:fs'
 import env from '#start/env'
+import { buildAiReport } from '#utils/ai_report_agent'
 
 export default class RequestsController {
   /**
@@ -310,7 +311,7 @@ export default class RequestsController {
 
       // Only keep diseased leafs
       const leafs = Array.isArray(payload?.leafs)
-        ? payload.leafs.filter((l: any) => l?.is_diseased === true)
+        ? payload.leafs //.filter((l: any) => l?.is_diseased === true)
         : []
 
       // Calculate summary from leafs array
@@ -585,6 +586,37 @@ export default class RequestsController {
       createdAt: req.createdAt.toISO(),
       updatedAt: req.updatedAt?.toISO() || null,
       completedAt: req.completedAt?.toISO() || null,
+    })
+  }
+
+  /**
+   * Generate an AI markdown report based on processed images
+   */
+  async generateAiReport({ params, auth, response }: HttpContext) {
+    const user = auth.getUserOrFail()
+    const requestId = params.id
+
+    const req = await Request.query()
+      .where('id', requestId)
+      .preload('images')
+      .preload('farm')
+      .firstOrFail()
+
+    if (user.role === 'FARMER') {
+      const farm = await Farm.find(req.farmId)
+      if (!farm || farm.userId !== user.id) {
+        return response.status(403).json({
+          message: 'You do not have permission to access this request',
+        })
+      }
+    }
+
+    const report = buildAiReport(req)
+    req.finalReport = report
+    await req.save()
+
+    return response.json({
+      report,
     })
   }
 

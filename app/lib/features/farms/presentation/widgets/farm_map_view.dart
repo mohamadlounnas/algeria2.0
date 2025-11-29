@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart' as latlng;
 import '../../../requests/domain/entities/request.dart' as req_domain;
@@ -38,64 +39,100 @@ class _FarmMapViewState extends State<FarmMapView> {
     });
   }
 
-  List<latlng.LatLng> _getEditorPoints(domain.Farm? farm) {
-    return farm?.polygon
-            .map((p) => latlng.LatLng(p.latitude, p.longitude))
-            .toList() ??
-        <latlng.LatLng>[];
-  }
-
-  List<latlng.LatLng> _getRequestPoints(List<req_domain.RequestImage> images) {
-    return images
-        .map((image) => latlng.LatLng(image.latitude, image.longitude))
-        .toList();
-  }
-
-  List<Map<String, double>> _getFarmPolygon(domain.Farm? farm) {
-    return farm?.polygon
-            .map((point) => {
-                  'latitude': point.latitude,
-                  'longitude': point.longitude,
-                })
-            .toList() ??
-        <Map<String, double>>[];
-  }
-
   @override
   Widget build(BuildContext context) {
-    final requestProvider = RequestProvider.of(context);
-    final farmProvider = FarmProvider.of(context);
-    final requests = requestProvider?.requests ?? const <req_domain.Request>[];
-    final farmIndex =
-        farmProvider?.farms.indexWhere((f) => f.id == widget.farmId) ?? -1;
-    final farm = farmIndex != -1 ? farmProvider!.farms[farmIndex] : null;
-    final polygonData = _getFarmPolygon(farm);
-    final highlightMarkers = _getRequestPoints(requests.expand((r) => r.images).toList());
-
-    final activePolygon = _editedPolygon ?? polygonData;
-
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         children: [
           Expanded(
-            child: PolygonMapEditor(
+            child: _FarmMapBody(
+              farmId: widget.farmId,
+              editedPolygon: _editedPolygon,
               onPolygonUpdated: _onPolygonUpdated,
-              initialPoints: _getEditorPoints(farm),
-              highlightMarkers: highlightMarkers,
             ),
           ),
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Boundary points: ${activePolygon.length}'),
-              if (highlightMarkers.isNotEmpty)
-                Text('${highlightMarkers.length} request markers shown'),
-            ],
+          _FarmMapStats(
+            farmId: widget.farmId,
+            editedPolygon: _editedPolygon,
           ),
         ],
       ),
+    );
+  }
+}
+
+class _FarmMapBody extends StatelessWidget {
+  final String farmId;
+  final List<Map<String, double>>? editedPolygon;
+  final ValueChanged<List<Map<String, double>>> onPolygonUpdated;
+
+  const _FarmMapBody({
+    required this.farmId,
+    required this.editedPolygon,
+    required this.onPolygonUpdated,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final farmProvider = FarmProvider.of(context);
+    final requestProvider = RequestProvider.of(context);
+    final domain.Farm? farm = farmProvider?.farms.firstWhereOrNull((f) => f.id == farmId);
+    final requests = requestProvider?.requests ?? const <req_domain.Request>[];
+    final highlightMarkers = requests
+      .expand((r) => r.images)
+      .map((image) => latlng.LatLng(image.latitude, image.longitude))
+      .toList();
+    final initialPoints = editedPolygon != null
+      ? (editedPolygon ?? [])!
+        .map((point) => latlng.LatLng(
+            point['latitude'] ?? 0,
+            point['longitude'] ?? 0,
+          ))
+        .toList()
+      : farm?.polygon
+          .map((p) => latlng.LatLng(p.latitude, p.longitude))
+          .toList() ??
+        const <latlng.LatLng>[];
+    return PolygonMapEditor(
+      onPolygonUpdated: onPolygonUpdated,
+      initialPoints: initialPoints,
+      highlightMarkers: highlightMarkers,
+    );
+  }
+}
+
+class _FarmMapStats extends StatelessWidget {
+  final String farmId;
+  final List<Map<String, double>>? editedPolygon;
+
+  const _FarmMapStats({
+    required this.farmId,
+    required this.editedPolygon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final farmProvider = FarmProvider.of(context);
+    final requestProvider = RequestProvider.of(context);
+    final domain.Farm? farm = farmProvider?.farms.firstWhereOrNull((f) => f.id == farmId);
+    final polygon = editedPolygon ?? farm?.polygon.map((point) => {
+          'latitude': point.latitude,
+          'longitude': point.longitude,
+        }).toList() ??
+        const <Map<String, double>>[];
+    final markerCount = requestProvider
+            ?.requests
+            .expand((r) => r.images)
+            .length ??
+        0;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text('Boundary points: ${polygon.length}'),
+        if (markerCount > 0) Text('$markerCount request markers shown'),
+      ],
     );
   }
 }

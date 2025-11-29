@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
 
 class DioClient {
-  static String _baseUrlKey = 'api_base_url';
+  static String _baseUrlKey = 'http://localhost:3333';
   static getBaseUrl() => _baseUrlKey;
 
   late final Dio _dio;

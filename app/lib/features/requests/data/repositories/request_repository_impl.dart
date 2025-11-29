@@ -184,6 +184,19 @@ class RequestRepositoryImpl implements RequestRepository {
   }
 
   @override
+  Future<String?> generateAiReport(String requestId) async {
+    try {
+      final response = await dio.post('${ApiConstants.requests}/$requestId/ai-report');
+      return response.data['report'] as String?;
+    } on DioException catch (e) {
+      if (e.response != null) {
+        throw Exception(e.response?.data['message'] ?? 'Failed to generate AI report');
+      }
+      throw Exception('Network error: ${e.message}');
+    }
+  }
+
+  @override
   Future<String?> getReport(String id) async {
     try {
       final response = await dio.get('${ApiConstants.requests}/$id/report');

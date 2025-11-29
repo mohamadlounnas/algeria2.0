@@ -15,6 +15,7 @@ class RequestProvider extends InheritedWidget {
   final Future<void> Function(String, RequestImage)? addImage;
   final Future<void> Function(String)? sendRequest;
   final Future<void> Function(String, UpdateRequestRequest)? updateRequest;
+  final Future<String?> Function(String)? generateAiReport;
   final Future<void> Function(String, UploadImageRequest)? uploadImage;
   final Future<void> Function(String, List<UploadImageRequest>)? bulkUploadImages;
   final Future<Request?> Function(String)? fetchRequest;
@@ -31,6 +32,7 @@ class RequestProvider extends InheritedWidget {
     this.addImage,
     this.sendRequest,
     this.updateRequest,
+    this.generateAiReport,
     this.uploadImage,
     this.bulkUploadImages,
     this.fetchRequest,
@@ -150,6 +152,23 @@ class _RequestProviderStateState extends State<RequestProviderState> {
       _replaceRequestInState(refreshed, addIfMissing: true);
     } catch (e) {
       rethrow;
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<String?> _generateAiReport(String requestId) async {
+    if (_requestRepository == null) return null;
+
+    setState(() => _isLoading = true);
+    try {
+      final report = await _requestRepository!.generateAiReport(requestId);
+      final refreshed = await _requestRepository!.getRequestById(requestId);
+      _replaceRequestInState(refreshed, addIfMissing: true);
+      return report;
+    } catch (e) {
+      debugPrint('Error generating AI report: $e');
+      return null;
     } finally {
       setState(() => _isLoading = false);
     }
@@ -276,6 +295,7 @@ class _RequestProviderStateState extends State<RequestProviderState> {
       addImage: _addImage,
       sendRequest: _sendRequest,
       updateRequest: _updateRequest,
+      generateAiReport: _generateAiReport,
       uploadImage: _uploadImage,
       bulkUploadImages: _bulkUploadImages,
       fetchRequest: _fetchRequest,

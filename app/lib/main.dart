@@ -44,6 +44,7 @@ class MyApp extends StatelessWidget {
           child: FarmProviderState(
             child: RequestProviderState(
               child: ShadcnApp(
+                debugShowCheckedModeBanner: false,
                 title: 'Farm Disease Detection',
                 theme: ThemeData(),
                 darkTheme: ThemeData.dark(

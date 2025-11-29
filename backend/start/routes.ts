@@ -44,6 +44,7 @@ router
     router.post('/api/requests/:id/images', [RequestsController, 'uploadImage'])
     router.post('/api/requests/:id/images/bulk', [RequestsController, 'bulkUploadImages'])
     router.post('/api/requests/:id/send', [RequestsController, 'send'])
+    router.post('/api/requests/:id/ai-report', [RequestsController, 'generateAiReport'])
     router.get('/api/requests/:id/report', [RequestsController, 'getReport'])
     // Re-analyze a single request image
     router.post('/api/request-images/:id/reanalyze', [RequestsController, 'reanalyzeImage'])
